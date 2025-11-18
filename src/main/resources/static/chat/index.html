@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Chat Ana Terra - Web</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <style>
+        * {
+          box-sizing: border-box;
+        }
+
+        :root {
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          background: #f3f4f6;
+          color: #111827;
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+          display: flex;
+          justify-content: center;
+          align-items: stretch;
+          min-height: 100vh;
+          background: radial-gradient(circle at top left, #EAF4CC 0, #f3f4f6 50%);
+        }
+
+        .chat-container {
+          width: 100%;
+          max-width: 480px;
+          margin: 16px;
+          background: #ffffff;
+          border-radius: 16px;
+          box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        .chat-header {
+          padding: 12px 16px;
+          background: linear-gradient(135deg, #8CB330, #A5CE39);
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .chat-header-avatar {
+          width: 34px;
+          height: 34px;
+          border-radius: 999px;
+          background: #D9EFAE;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          color: #4A6E00;
+          flex-shrink: 0;
+        }
+
+        .chat-header-title {
+          font-weight: 600;
+          font-size: 0.95rem;
+        }
+
+        .chat-header-subtitle {
+          font-size: 0.8rem;
+          opacity: 0.9;
+        }
+
+        .chat-session-chip {
+          font-size: 0.75rem;
+          color: #4A6E00;
+          background: #EAF4CC;
+          border-radius: 999px;
+          padding: 2px 8px;
+          margin-left: auto;
+          max-width: 90px;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          white-space: nowrap;
+        }
+
+        .chat-messages {
+          flex: 1;
+          overflow-y: auto;
+          padding: 12px;
+          background: #f9fafb;
+          scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .chat-empty-hint {
+          font-size: 0.85rem;
+          color: #6b7280;
+          text-align: center;
+          margin-top: 12px;
+        }
+
+        .msg-row {
+          display: flex;
+          margin-bottom: 8px;
+        }
+
+        .msg-row.user {
+          justify-content: flex-end;
+        }
+
+        .msg-row.bot {
+          justify-content: flex-start;
+        }
+
+        .msg-bubble {
+          max-width: 80%;
+          padding: 8px 10px;
+          border-radius: 12px;
+          font-size: 0.9rem;
+          line-height: 1.4;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+        }
+
+        .msg-bubble.user {
+          background: #A5CE39;
+          color: #ffffff;
+          border-bottom-right-radius: 2px;
+        }
+
+        .msg-bubble.bot {
+          background: #e5e7eb;
+          color: #111827;
+          border-bottom-left-radius: 2px;
+        }
+
+        .typing-indicator {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: #e5e7eb;
+          font-size: 0.8rem;
+          color: #4b5563;
+          margin-top: 4px;
+        }
+
+        .typing-dot {
+          width: 4px;
+          height: 4px;
+          border-radius: 999px;
+          background: #9ca3af;
+          animation: bounce 1s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+          0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+          40% { transform: scale(1); opacity: 1; }
+        }
+
+        .chat-footer {
+          padding: 8px;
+          border-top: 1px solid #e5e7eb;
+          background: #ffffff;
+          display: flex;
+          gap: 6px;
+          align-items: center;
+        }
+
+        .chat-input {
+          flex: 1;
+          border-radius: 999px;
+          border: 1px solid #d1d5db;
+          padding: 10px 14px;
+          font-size: 0.95rem;
+          outline: none;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .chat-input:focus {
+          border-color: #A5CE39;
+          box-shadow: 0 0 0 1px rgba(165, 206, 57, 0.35);
+        }
+
+        .chat-send-btn {
+          border: none;
+          border-radius: 999px;
+          padding: 10px 16px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          background: #A5CE39;
+          color: #ffffff;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          transition: background 0.15s ease, transform 0.05s ease;
+          flex-shrink: 0;
+        }
+
+        .chat-send-btn:active {
+          transform: translateY(1px);
+        }
+
+        .chat-send-btn:disabled {
+          opacity: 0.6;
+          cursor: default;
+        }
+
+        .chat-send-icon {
+          font-size: 1.1rem;
+        }
+
+        /* MOBILE: tela cheia, sem scroll externo */
+        @media (max-width: 600px) {
+          body {
+            background: #ffffff;
+            min-height: 100dvh;
+            height: 100dvh;
+            overflow: hidden;
+          }
+
+          .chat-container {
+            margin: 0;
+            max-width: 100%;
+            height: 100dvh;
+            border-radius: 0;
+            box-shadow: none;
+          }
+
+          .chat-messages {
+            padding: 10px;
+          }
+
+          .msg-bubble {
+            max-width: 85%;
+            font-size: 0.9rem;
+          }
+
+          .chat-footer {
+            padding: 8px 10px;
+          }
+
+          .chat-input {
+            font-size: 0.9rem;
+            padding: 9px 12px;
+          }
+
+          .chat-send-btn {
+            padding: 9px 12px;
+            font-size: 0.85rem;
+          }
+        }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+    <header class="chat-header">
+        <div class="chat-header-avatar">
+            AT
+        </div>
+        <div>
+            <div class="chat-header-title">Ana Terra · Assistente de Laboratório</div>
+            <div class="chat-header-subtitle">Análises de solo, folha, semente e água 🌱</div>
+        </div>
+        <div id="sessionChip" class="chat-session-chip" title="ID da sessão"></div>
+    </header>
+
+    <main id="chatMessages" class="chat-messages">
+        <div class="chat-empty-hint">
+            Comece digitando sua dúvida ou pedido de orçamento e aperte Enter. 💬
+        </div>
+    </main>
+
+    <footer class="chat-footer">
+        <button id="chatMicBtn" class="chat-send-btn" type="button" title="Clique para falar">
+            🎙
+        </button>
+        <input
+                id="chatInput"
+                class="chat-input"
+                type="text"
+                placeholder="Digite sua mensagem..."
+                autocomplete="off"
+        />
+        <button id="chatSendBtn" class="chat-send-btn">
+            <span class="chat-send-icon">➤</span>
+            Enviar
+        </button>
+    </footer>
+</div>
+
+<script>
+    // ==========================
+    // COOKIE DE RASTREIO
+    // ==========================
+    const TRACK_COOKIE = "ana_terra_user_id";
+
+    function setCookie(name, value, days) {
+      const d = new Date();
+      d.setTime(d.getTime() + (days*24*60*60*1000));
+      const expires = "expires=" + d.toUTCString();
+      document.cookie = name + "=" + encodeURIComponent(value) + ";" + expires + ";path=/";
+    }
+
+    function getCookie(name) {
+      const cname = name + "=";
+      const decoded = decodeURIComponent(document.cookie || "");
+      const parts = decoded.split(";");
+      for (let c of parts) {
+        c = c.trim();
+        if (c.indexOf(cname) === 0) {
+          return c.substring(cname.length, c.length);
+        }
+      }
+      return null;
+    }
+
+    function ensureUserTrackingId() {
+      let id = getCookie(TRACK_COOKIE);
+      if (!id) {
+        if (window.crypto && window.crypto.randomUUID) {
+          id = window.crypto.randomUUID();
+        } else {
+          id = "user-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+        }
+        setCookie(TRACK_COOKIE, id, 365);
+      }
+      return id;
+    }
+
+    const userTrackingId = ensureUserTrackingId();
+    console.log("User tracking cookie:", userTrackingId);
+
+    // ==========================
+    // CONFIGURAÇÃO BÁSICA
+    // ==========================
+    const API_URL = "/api/web-chat"; // respeita o context-path /api
+
+    let sessionId = localStorage.getItem("ana_terra_session_id") || null;
+
+    const chatMessagesEl = document.getElementById("chatMessages");
+    const chatInputEl = document.getElementById("chatInput");
+    const chatSendBtnEl = document.getElementById("chatSendBtn");
+    const micBtnEl = document.getElementById("chatMicBtn");
+    const sessionChipEl = document.getElementById("sessionChip");
+
+    updateSessionChip();
+
+    function scrollToBottom() {
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    }
+
+    function appendMessage(role, text) {
+      const row = document.createElement("div");
+      row.className = `msg-row ${role}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = `msg-bubble ${role}`;
+      bubble.textContent = text;
+
+      row.appendChild(bubble);
+      chatMessagesEl.appendChild(row);
+      scrollToBottom();
+    }
+
+    let typingRow = null;
+
+    function showTyping() {
+      if (typingRow) return;
+
+      typingRow = document.createElement("div");
+      typingRow.className = "msg-row bot";
+
+      const wrap = document.createElement("div");
+      wrap.className = "typing-indicator";
+
+      const dot1 = document.createElement("div");
+      dot1.className = "typing-dot";
+      const dot2 = document.createElement("div");
+      dot2.className = "typing-dot";
+      const dot3 = document.createElement("div");
+      dot3.className = "typing-dot";
+
+      wrap.appendChild(dot1);
+      wrap.appendChild(dot2);
+      wrap.appendChild(dot3);
+
+      typingRow.appendChild(wrap);
+      chatMessagesEl.appendChild(typingRow);
+      scrollToBottom();
+    }
+
+    function hideTyping() {
+      if (typingRow && typingRow.parentNode) {
+        typingRow.parentNode.removeChild(typingRow);
+      }
+      typingRow = null;
+    }
+
+    function updateSessionChip() {
+      if (sessionId) {
+        sessionChipEl.textContent = sessionId.substring(0, 10) + "…";
+      } else {
+        sessionChipEl.textContent = "nova sessão";
+      }
+    }
+
+    async function sendMessage() {
+      const text = chatInputEl.value.trim();
+      if (!text) return;
+
+      const hint = chatMessagesEl.querySelector(".chat-empty-hint");
+      if (hint) hint.remove();
+
+      appendMessage("user", text);
+      chatInputEl.value = "";
+      chatInputEl.focus();
+
+      chatSendBtnEl.disabled = true;
+      micBtnEl.disabled = true;
+      showTyping();
+
+      try {
+        const body = {
+          sessionId: sessionId,
+          message: text,
+          canal: "WEB",
+          userId: userTrackingId
+        };
+
+        const resp = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(body)
+        });
+
+        if (!resp.ok) {
+          throw new Error("Erro HTTP " + resp.status);
+        }
+
+        const data = await resp.json();
+        console.log("Resposta da API:", data);
+
+        if (data.sessionId && data.sessionId !== sessionId) {
+          sessionId = data.sessionId;
+          localStorage.setItem("ana_terra_session_id", sessionId);
+          updateSessionChip();
+        }
+
+        const resposta = data.reply || data.resposta || data.message || "(sem resposta)";
+        hideTyping();
+        appendMessage("bot", resposta);
+
+      } catch (err) {
+        console.error(err);
+        hideTyping();
+        appendMessage(
+          "bot",
+          "Tive um problema para falar com o servidor agora 😅. Tenta novamente em alguns instantes, por favor."
+        );
+      } finally {
+        chatSendBtnEl.disabled = false;
+        micBtnEl.disabled = false;
+      }
+    }
+
+    chatSendBtnEl.addEventListener("click", () => {
+      sendMessage();
+    });
+
+    chatInputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // ==========================
+    // ÁUDIO
+    // ==========================
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+
+    async function startRecording() {
+      console.log("startRecording chamado");
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Seu navegador não suporta gravação de áudio.");
+        return;
+      }
+
+      if (typeof MediaRecorder === "undefined") {
+        console.error("MediaRecorder não suportado neste navegador");
+        alert("Seu navegador não suporta gravação de áudio (MediaRecorder).");
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          // Tenta usar o tipo nativo do recorder
+          const mime = mediaRecorder.mimeType || "audio/webm";
+          const blob = new Blob(audioChunks, { type: mime });
+          enviarAudioParaServidor(blob);
+          stream.getTracks().forEach(t => t.stop());
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+        micBtnEl.textContent = "⏹";
+      } catch (err) {
+        console.error("Erro ao acessar microfone:", err.name, err.message);
+        if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+          alert("O acesso ao microfone foi bloqueado pelo navegador. Verifique as permissões do site.");
+        } else {
+          alert("Não foi possível acessar o microfone neste dispositivo.");
+        }
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        micBtnEl.textContent = "🎙";
+      }
+    }
+
+    async function enviarAudioParaServidor(blob) {
+      const hint = chatMessagesEl.querySelector(".chat-empty-hint");
+      if (hint) hint.remove();
+
+      appendMessage("user", "🎙️ Áudio enviado... (transcrevendo)");
+
+      showTyping();
+      chatSendBtnEl.disabled = true;
+      micBtnEl.disabled = true;
+
+      try {
+        const formData = new FormData();
+        formData.append("audio", blob, "gravacao.webm");
+        if (sessionId) formData.append("sessionId", sessionId);
+        formData.append("canal", "WEB");
+
+        const resp = await fetch(API_URL + "/audio", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!resp.ok) {
+          throw new Error("Erro HTTP " + resp.status);
+        }
+
+        const data = await resp.json();
+        console.log("Resposta da API (áudio):", data);
+
+        if (data.sessionId && data.sessionId !== sessionId) {
+          sessionId = data.sessionId;
+          localStorage.setItem("ana_terra_session_id", sessionId);
+          updateSessionChip();
+        }
+
+        hideTyping();
+        const resposta = data.reply || "(sem resposta)";
+        appendMessage("bot", resposta);
+
+      } catch (err) {
+        console.error(err);
+        hideTyping();
+        appendMessage(
+          "bot",
+          "Tive um problema para transcrever seu áudio 😅. Tenta novamente em alguns instantes, por favor."
+        );
+      } finally {
+        chatSendBtnEl.disabled = false;
+        micBtnEl.disabled = false;
+      }
+    }
+
+    micBtnEl.addEventListener("click", () => {
+      if (!isRecording) {
+        startRecording();
+      } else {
+        stopRecording();
+      }
+    });
+</script>
+</body>
+</html>
