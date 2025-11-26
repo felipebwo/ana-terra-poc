@@ -122,3 +122,7 @@ target/classes/br/com/ibra/service/AtendimentoHumanoService.class
 target/classes/br/com/ibra/service/AtendimentoHumanoService$AtendimentoPendente.class
 
 target/classes/br/com/ibra/service/ChatLogService.class
+
+target/classes/br/com/ibra/service/GmailPollingService.class
+
+target/classes/br/com/ibra/service/GmailPollingService$checkInbox$session$1.class
